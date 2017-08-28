@@ -3,9 +3,10 @@ package sms
 import "github.com/denverdino/aliyungo/common"
 
 const (
-	SmsEndPoint = "https://sms.aliyuncs.com/"
-	SingleSendSms = "SingleSendSms"
-	SmsAPIVersion = "2016-09-27"
+	SmsEndPoint      = "https://dysmsapi.aliyuncs.com/"
+	SmsAPIVersion    = "2017-05-25"
+	SendSMS          = "SendSms"
+	QuerySendDetails = "QuerySendDetails"
 )
 
 type Client struct {
