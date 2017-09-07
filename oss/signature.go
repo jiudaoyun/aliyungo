@@ -54,13 +54,13 @@ func (client *Client) signRequest(request *request) {
 	if request.bucket != "" {
 		resource = "/" + request.bucket + request.path
 	}
+
 	params := make(url.Values)
 	for k, v := range query {
 		if ossParamsToSign[k] {
 			params[k] = v
 		}
 	}
-
 	if len(params) > 0 {
 		resource = resource + "?" + util.Encode(params)
 	}
@@ -74,7 +74,7 @@ func (client *Client) signRequest(request *request) {
 	//log.Println("stringToSign: ", stringToSign)
 	signature := util.CreateSignature(stringToSign, client.AccessKeySecret)
 
-	if query.Get("OSSAccessKeyId") != "" {
+	if urlSignature {
 		query.Set("Signature", signature)
 	} else {
 		headers.Set("Authorization", "OSS "+client.AccessKeyId+":"+signature)

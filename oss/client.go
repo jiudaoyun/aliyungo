@@ -826,19 +826,19 @@ func (b *Bucket) URL(path string) string {
 
 // SignedURL returns a signed URL that allows anyone holding the URL
 // to retrieve the object at path. The signature is valid until expires.
-func (b *Bucket) SignedURL(path string, expires time.Time) string {
+func (b *Bucket) SignedURL(path string, expires time.Time) (string, http.Header) {
 	return b.SignedURLWithArgs(path, expires, nil, nil)
 }
 
 // SignedURLWithArgs returns a signed URL that allows anyone holding the URL
 // to retrieve the object at path. The signature is valid until expires.
-func (b *Bucket) SignedURLWithArgs(path string, expires time.Time, params url.Values, headers http.Header) string {
+func (b *Bucket) SignedURLWithArgs(path string, expires time.Time, params url.Values, headers http.Header) (string, http.Header) {
 	return b.SignedURLWithMethod("GET", path, expires, params, headers)
 }
 
 // SignedURLWithMethod returns a signed URL that allows anyone holding the URL
 // to either retrieve the object at path or make a HEAD request against it. The signature is valid until expires.
-func (b *Bucket) SignedURLWithMethod(method, path string, expires time.Time, params url.Values, headers http.Header) string {
+func (b *Bucket) SignedURLWithMethod(method, path string, expires time.Time, params url.Values, headers http.Header) (string, http.Header) {
 	var uv = url.Values{}
 
 	if params != nil {
@@ -864,7 +864,7 @@ func (b *Bucket) SignedURLWithMethod(method, path string, expires time.Time, par
 		panic(err)
 	}
 
-	return u.String()
+	return u.String(), req.headers
 }
 
 // UploadSignedURL returns a signed URL that allows anyone holding the URL
@@ -983,15 +983,13 @@ func (client *Client) query(req *request, resp interface{}) error {
 }
 
 // Sets baseurl on req from bucket name and the region endpoint
-func (client *Client) setBaseURL(req *request) error {
-
+func (client *Client) setBaseURL(req *request) {
 	if client.endpoint == "" {
 		req.baseurl = client.Region.GetEndpoint(client.Internal, req.bucket, client.Secure)
 	} else {
 		req.baseurl = fmt.Sprintf("%s://%s", getProtocol(client.Secure), client.endpoint)
 	}
-
-	return nil
+	return
 }
 
 // partiallyEscapedPath partially escapes the OSS path allowing for all OSS REST API calls.
@@ -1027,15 +1025,12 @@ func (client *Client) prepare(req *request) error {
 	if len(client.SecurityToken) != 0 {
 		headers.Set("x-oss-security-token", client.SecurityToken)
 	}
-
 	params := make(url.Values)
-
 	for k, v := range req.params {
 		params[k] = v
 	}
-
-	req.params = params
 	req.headers = headers
+	req.params = params
 
 	if !req.prepared {
 		req.prepared = true
@@ -1047,10 +1042,7 @@ func (client *Client) prepare(req *request) error {
 			req.path = "/" + req.path
 		}
 
-		err := client.setBaseURL(req)
-		if err != nil {
-			return err
-		}
+		client.setBaseURL(req)
 	}
 
 	req.headers.Set("Date", util.GetGMTime())
