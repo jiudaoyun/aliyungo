@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/denverdino/aliyungo/common"
+	"fmt"
 )
 
 type SendArgs struct {
@@ -15,7 +16,7 @@ type SendArgs struct {
 }
 
 type SendResponse struct {
-	common.Response
+	common.ErrorResponse
 	BizId string
 }
 
@@ -23,6 +24,9 @@ type SendResponse struct {
 func (this *Client) SendSms(args *SendArgs) (*SendResponse, error) {
 	res := &SendResponse{}
 	err := this.InvokeByAnyMethod(http.MethodPost, SendSMS, "", args, res)
+	if err == nil && res.Code != "OK" {
+		err = fmt.Errorf("aliyun send SMS error: RequestId: %s Code: %s Message: %s", res.RequestId, res.Code, res.Message)
+	}
 	return res, err
 }
 
